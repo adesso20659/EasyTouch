@@ -241,28 +241,23 @@ void del_key_bit(report_nkro_t* nkro_report, uint8_t code) {
  *
  * FIXME: Needs doc
  */
-void add_key_to_report(uint8_t key) {
-#ifdef NKRO_ENABLE
-    if (keyboard_protocol && keymap_config.nkro) {
-        add_key_bit(nkro_report, key);
-        return;
-    }
-#endif
-    add_key_byte(keyboard_report, key);
-}
 
-/** \brief del key from report
- *
- * FIXME: Needs doc
- */
-void del_key_from_report(uint8_t key) {
-#ifdef NKRO_ENABLE
-    if (keyboard_protocol && keymap_config.nkro) {
-        del_key_bit(nkro_report, key);
-        return;
+void add_key_to_report(uint8_t key) {
+    uint8_t index = 0;
+    for (index = 0; index < KEYBOARD_REPORT_KEYS; index++) {
+       if (keyboard_report->keys[index] == 0x00) {
+           keyboard_report->keys[index] = key;
+           keymap_config.User_Send_Type = false;
+           return;
+       }
     }
-#endif
-    del_key_byte(keyboard_report, key);
+
+    if (keyboard_protocol && keymap_config.nkro) {
+        if ((key >> 3) < NKRO_REPORT_BITS) {
+            nkro_report->bits[key >> 3] |= 1 << (key & 7);
+            keymap_config.User_Send_Type = true;
+        }
+    }
 }
 
 /** \brief clear key from report
